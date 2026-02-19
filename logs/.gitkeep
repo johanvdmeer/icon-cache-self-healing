@@ -1,0 +1,8 @@
+# This directory is created automatically at runtime.
+# Repair-IconCache.ps1 and Watch-IconCache.ps1 write their logs here.
+#
+# Files created at runtime:
+#   IconCacheRepair.log   — repair events, file counts, sizes
+#   Watchdog.log          — FSW events, heartbeats, threshold breaches
+#
+# This .gitkeep file exists only to preserve the empty folder in version control.

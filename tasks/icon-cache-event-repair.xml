@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  icon-cache-self-healing — Solution A: Event-Triggered Repair
+  Task Scheduler XML Definition
+  
+  Version:        1.0.0
+  Policy:         naming-conventions-policy-v3.2.0 (Style B: kebab-case for XML/config)
+  
+  HOW TO IMPORT:
+    Option 1 (Recommended): Run Register-Tasks.ps1 — it handles everything automatically.
+    
+    Option 2 (Manual import):
+      1. Edit <Arguments> below — replace the path with your actual Repair-IconCache.ps1 path.
+      2. Open Task Scheduler (taskschd.msc)
+      3. Action menu → Import Task → select this file
+      
+    Option 3 (Command line):
+      schtasks /Create /XML "path\to\icon-cache-event-repair.xml" /TN "\IconCache\EventRepair" /F
+      
+  TRIGGERS EXPLAINED:
+    1. Event ID 1000 (Application Error, source: explorer.exe)
+       → Explorer has crashed hard. Icon cache corruption is a common cause.
+       → Delay: 60 seconds (lets Windows complete its own crash recovery first)
+       
+    2. Event ID 1002 (Application Hang, source: explorer.exe)  
+       → Explorer is unresponsive. Same root cause as ID 1000.
+       → Delay: 90 seconds (slightly longer — hang recovery takes more time)
+       
+    3. Event ID 107 (Kernel-Power, resume from sleep)
+       → Opportunistic: not a crash, but wake-from-sleep is a good moment to
+         check and pre-empt cache issues before they manifest as symptoms.
+       → No delay.
+       
+  SETTINGS:
+    - Hidden: true  (no UI window appears)
+    - MultipleInstancesPolicy: IgnoreNew  (lock file in script also handles this)
+    - ExecutionTimeLimit: PT5M  (5 minutes max — repair is fast)
+    - RestartOnFailure: 2 retries, 2 minutes apart
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+
+  <RegistrationInfo>
+    <Description>
+      icon-cache-self-healing v1.0.0 — Solution A.
+      Repairs Windows icon cache after explorer.exe crash (Event 1000) or hang (Event 1002).
+      Also performs an opportunistic check after resume from sleep (Event 107).
+      Silent background execution. No user-visible windows.
+    </Description>
+    <URI>\IconCache\EventRepair</URI>
+  </RegistrationInfo>
+
+  <Triggers>
+
+    <!-- TRIGGER 1: explorer.exe hard crash (Application Error) -->
+    <EventTrigger>
+      <Enabled>true</Enabled>
+      <Subscription><![CDATA[
+        <QueryList>
+          <Query Id="0" Path="Application">
+            <Select Path="Application">
+              *[System[Provider[@Name='Application Error'] and EventID=1000]]
+              and
+              *[EventData[Data[@Name='param1'] and (Data='explorer.exe')]]
+            </Select>
+          </Query>
+        </QueryList>
+      ]]></Subscription>
+      <!-- Wait 60 seconds: lets Windows finish its own crash recovery before we intervene -->
+      <Delay>PT60S</Delay>
+    </EventTrigger>
+
+    <!-- TRIGGER 2: explorer.exe hang (Application Hang) -->
+    <EventTrigger>
+      <Enabled>true</Enabled>
+      <Subscription><![CDATA[
+        <QueryList>
+          <Query Id="0" Path="Application">
+            <Select Path="Application">
+              *[System[Provider[@Name='Application Hang'] and EventID=1002]]
+              and
+              *[EventData[Data[@Name='param1'] and (Data='explorer.exe')]]
+            </Select>
+          </Query>
+        </QueryList>
+      ]]></Subscription>
+      <!-- 90 seconds: hang recovery takes longer than crash recovery -->
+      <Delay>PT90S</Delay>
+    </EventTrigger>
+
+    <!-- TRIGGER 3: Resume from sleep/hibernation — opportunistic check -->
+    <EventTrigger>
+      <Enabled>true</Enabled>
+      <Subscription><![CDATA[
+        <QueryList>
+          <Query Id="0" Path="System">
+            <Select Path="System">
+              *[System[Provider[@Name='Microsoft-Windows-Kernel-Power'] and EventID=107]]
+            </Select>
+          </Query>
+        </QueryList>
+      ]]></Subscription>
+      <!-- No delay on wake — repair script will skip if cache is healthy -->
+    </EventTrigger>
+
+  </Triggers>
+
+  <Principals>
+    <Principal id="Author">
+      <!-- Run as the currently logged-in user (cache files are user-scoped) -->
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <Hidden>true</Hidden>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT5M</ExecutionTimeLimit>
+    <Priority>7</Priority>
+    <RestartOnFailure>
+      <Interval>PT2M</Interval>
+      <Count>2</Count>
+    </RestartOnFailure>
+  </Settings>
+
+  <Actions Context="Author">
+    <Exec>
+      <Command>powershell.exe</Command>
+      <!--
+        IMPORTANT: Update the path below to match where you placed the toolkit.
+        Example: C:\Tools\icon-cache-self-healing\scripts\Repair-IconCache.ps1
+        
+        Register-Tasks.ps1 sets this path automatically.
+        Only edit manually if you are importing this XML directly.
+      -->
+      <Arguments>-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -File "C:\Tools\icon-cache-self-healing\scripts\Repair-IconCache.ps1"</Arguments>
+    </Exec>
+  </Actions>
+
+</Task>

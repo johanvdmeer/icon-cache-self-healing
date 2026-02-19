@@ -1,0 +1,23 @@
+[2026-02-19 04:07:36][INFO] --- Repair-IconCache.ps1 invoked ---
+[2026-02-19 04:07:36][INFO] -Force specified. Skipping health check.
+[2026-02-19 04:07:36][REPAIR] === REPAIR STARTED ===
+[2026-02-19 04:07:36][REPAIR] Parameters: SizeLimitMB=256 Force=True IncludeThumbcache=False
+[2026-02-19 04:07:36][INFO] Stopping explorer.exe...
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_1280.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_16.db (1024 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_1920.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_256.db (2048 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_2560.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_32.db (1024 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_48.db (1024 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_768.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_96.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_custom_stream.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_exif.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_idx.db (14.3 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_sr.db (0 KB)
+[2026-02-19 04:07:38][INFO] Deleted: iconcache_wide_alternate.db (0 KB)
+[2026-02-19 04:07:39][INFO] Deleted: iconcache_wide.db (0 KB)
+[2026-02-19 04:07:39][INFO] ie4uinit.exe -show executed (shell icon index reset).
+[2026-02-19 04:07:39][INFO] Restarting explorer.exe...
+[2026-02-19 04:07:42][REPAIR] === REPAIR COMPLETE — 15 file(s) deleted | Before: 5.01 MB | After: 2.01 MB ===

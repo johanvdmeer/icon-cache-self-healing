@@ -1,0 +1,5 @@
+﻿[2026-02-19 04:05:44][INFO] === Watch-IconCache.ps1 started ===
+[2026-02-19 04:05:44][INFO] Watching: C:\Users\johan\AppData\Local\Microsoft\Windows\Explorer
+[2026-02-19 04:05:44][INFO] Threshold: 256 MB | Cooldown: 30 min
+[2026-02-19 04:05:44][INFO] Repair script: C:\Users\johan\Desktop\system\icon-cache-self-healing\scripts\Repair-IconCache.ps1
+[2026-02-19 04:05:45][INFO] FileSystemWatcher active. Waiting for OS events... (CPU: ~0% at idle)
