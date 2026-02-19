@@ -1,0 +1,5 @@
+# Ignore runtime log files
+logs/*.log
+
+# Ignore zip archives
+*.zip
