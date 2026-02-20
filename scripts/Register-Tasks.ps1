@@ -247,9 +247,10 @@ Write-Host "--- Registering Solution B: File-Size Watchdog Daemon ---" -Foregrou
 
 Remove-ExistingTask -TaskName "Watchdog"
 
+$vbsLauncher = Join-Path $ScriptDir "launch-watchdog.vbs"
 $actionB = New-ScheduledTaskAction `
-    -Execute  'cmd.exe' `
-    -Argument "/c start /min powershell.exe -WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -File `"$WatchScript`""
+    -Execute  'wscript.exe' `
+    -Argument "`"$vbsLauncher`""
 
 $triggerB = New-ScheduledTaskTrigger -AtLogOn
 
