@@ -118,7 +118,7 @@ Write-WatchLog "=== Watch-IconCache.ps1 started ==="
 Write-WatchLog "Watching: $CachePath"
 Write-WatchLog "Threshold: $SizeLimitMB MB | Cooldown: $CooldownMin min"
 Write-WatchLog "Repair script: $RepairScript"
-Write-WatchLog "Mechanism: FileSystemWatcher (ReadDirectoryChangesW) — interrupt-driven"
+Write-WatchLog "Mechanism: FileSystemWatcher (ReadDirectoryChangesW) - interrupt-driven"
 
 $sizeMB = Get-CacheSizeMB
 Write-WatchLog "Current cache size at startup: $sizeMB MB"
