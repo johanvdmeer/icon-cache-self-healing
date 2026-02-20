@@ -248,8 +248,8 @@ Write-Host "--- Registering Solution B: File-Size Watchdog Daemon ---" -Foregrou
 Remove-ExistingTask -TaskName "Watchdog"
 
 $actionB = New-ScheduledTaskAction `
-    -Execute  'powershell.exe' `
-    -Argument "-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -File `"$WatchScript`""
+    -Execute  'cmd.exe' `
+    -Argument "/c start /min powershell.exe -WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -File `"$WatchScript`""
 
 $triggerB = New-ScheduledTaskTrigger -AtLogOn
 
