@@ -55,7 +55,7 @@ param(
     [string] $RepairScript  = ''
 )
 
-Set-StrictMode -Version Latest
+Set-StrictMode -Off
 $ErrorActionPreference = 'Continue'   # Don't exit on non-fatal errors inside the loop
 
 # ---------------------------------------------------------------------------
@@ -210,6 +210,10 @@ $heartbeatJob = Register-ObjectEvent `
     }
 
 Write-WatchLog "FileSystemWatcher active. Waiting for OS events... (CPU: ~0% at idle)"
+
+$sizeMB = 0
+try { $sizeMB = Get-CacheSizeMB } catch { }
+Write-WatchLog "Current cache size at startup: $sizeMB MB"
 
 # ---------------------------------------------------------------------------
 # MAIN LOOP — Wait-Event blocks via OS wait handle (zero CPU spin)
