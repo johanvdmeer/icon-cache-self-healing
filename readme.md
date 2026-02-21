@@ -44,34 +44,33 @@ The runtime is a compiled **Go binary** (`icon-cache-watchdog.exe`) running as a
 flowchart TD
     A([Windows 11 Running]) --> B{What triggered the check?}
 
-    B -->|"Explorer crash — Event 1000 / 1002"| C[Layer A — Task Scheduler Event trigger]
-    B -->|"Wake from sleep — Event 107"| C
+    B -->|"Crash Event 1000/1002 or sleep resume Event 107"| C[Layer A — Task Scheduler Event trigger]
     B -->|"Cache size exceeds 32 MB — poll every 30s"| D[Layer B — Go daemon Size watchdog]
     B -->|Logon| E[Layer C — Go daemon Startup health check]
     B -->|Every 45 min| F[Layer D — Go daemon Periodic health check]
 
-    C --> G[Repair-IconCache.ps1]
-    D --> G
+    C --> R[Repair-IconCache.ps1]
+    D --> R
     E --> H{All 4 heuristics pass?}
     F --> H
 
     H -->|Yes| I([Cache healthy — no action needed ✓])
-    H -->|No| J["Heuristic failed: index missing, external write, low file count, or stale cache"]
-    J --> G
+    H -->|No — index missing, external write,
+low file count, or stale cache| R
 
-    G --> J[Stop explorer.exe]
-    J --> K[Delete iconcache_*.db]
-    K --> L[Reset shell icon index — ie4uinit.exe]
-    L --> M[Restart explorer.exe]
-    M --> N([Icons rebuilt clean ✓])
+    R --> S1[Stop explorer.exe]
+    S1 --> S2[Delete iconcache_*.db]
+    S2 --> S3[Reset shell icon index — ie4uinit.exe]
+    S3 --> S4[Restart explorer.exe]
+    S4 --> Z([Icons rebuilt clean ✓])
 
     style C fill:#1a3a5c,color:#60CDFF,stroke:#60CDFF
     style D fill:#1a472a,color:#6CCB5F,stroke:#6CCB5F
     style E fill:#1a472a,color:#6CCB5F,stroke:#6CCB5F
     style F fill:#1a472a,color:#6CCB5F,stroke:#6CCB5F
     style I fill:#1a472a,color:#6CCB5F,stroke:#6CCB5F
-    style N fill:#1a472a,color:#6CCB5F,stroke:#6CCB5F
-    style G fill:#2d2d2d,color:#ffffff,stroke:#555
+    style Z fill:#1a472a,color:#6CCB5F,stroke:#6CCB5F
+    style R fill:#2d2d2d,color:#ffffff,stroke:#555
 ```
 
 ---
