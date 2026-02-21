@@ -45,7 +45,8 @@ flowchart TD
     A([Windows 11 Running]) --> B{What triggered the check?}
 
     B -->|"Explorer crash — Event 1000 / 1002"| C[Layer A — Task Scheduler Event trigger]
-    B -->|"Wake from sleep — Event 107"| C
+    B -->|"Wake from sleep — Event 107"| C2[Layer A — Task Scheduler Event trigger]
+    C2 --> G
     B -->|"Cache size exceeds 32 MB — poll every 30s"| D[Layer B — Go daemon Size watchdog]
     B -->|Logon| E[Layer C — Go daemon Startup health check]
     B -->|Every 45 min| F[Layer D — Go daemon Periodic health check]
