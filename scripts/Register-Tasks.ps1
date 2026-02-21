@@ -247,21 +247,28 @@ Write-Host "--- Registering Solution B: File-Size Watchdog Daemon ---" -Foregrou
 
 Remove-ExistingTask -TaskName "Watchdog"
 
-$vbsLauncher = Join-Path $ScriptDir "launch-watchdog.vbs"
+# Use pwsh.exe (PowerShell 7) - handles -WindowStyle Hidden reliably for long-running daemons
+# Falls back to powershell.exe if pwsh.exe is not found
+$pwsh = if (Test-Path "$env:ProgramFiles\PowerShell\7\pwsh.exe") {
+    "$env:ProgramFiles\PowerShell\7\pwsh.exe"
+} else {
+    "powershell.exe"
+}
 $actionB = New-ScheduledTaskAction `
-    -Execute  'wscript.exe' `
-    -Argument "`"$vbsLauncher`""
+    -Execute  $pwsh `
+    -Argument "-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -File `"$WatchScript`""
 
 $triggerB = New-ScheduledTaskTrigger -AtLogOn
 
 $settingsB = New-ScheduledTaskSettingsSet `
-    -ExecutionTimeLimit      ([TimeSpan]::Zero) `
-    -RestartCount            3 `
-    -RestartInterval         (New-TimeSpan -Minutes 5) `
-    -MultipleInstances       IgnoreNew `
-    -Hidden                  `
-    -AllowStartIfOnBatteries `
-    -DontStopIfGoingOnBatteries
+    -ExecutionTimeLimit         ([TimeSpan]::Zero) `
+    -RestartCount               3 `
+    -RestartInterval            (New-TimeSpan -Minutes 5) `
+    -MultipleInstances          IgnoreNew `
+    -Hidden                     `
+    -AllowStartIfOnBatteries    `
+    -DontStopIfGoingOnBatteries `
+    -WakeToRun                  $false
 
 Register-ScheduledTask `
     -TaskPath   $TaskFolder `
