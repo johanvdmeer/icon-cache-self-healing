@@ -42,25 +42,25 @@ The runtime is a compiled **Go binary** (`icon-cache-watchdog.exe`) running as a
 
 ```mermaid
 flowchart TD
-    A([Windows 11 Running]) --> B{What triggered\nthe check?}
+    A([Windows 11 Running]) --> B{What triggered the check?}
 
-    B -->|explorer.exe crash\nEvent ID 1000/1002| C[Layer A\nTask Scheduler\nEvent trigger]
-    B -->|Wake from sleep\nEvent ID 107| C
-    B -->|Cache size > 32 MB\npoll every 30s| D[Layer B\nGo daemon\nSize watchdog]
-    B -->|Logon| E[Layer C\nGo daemon\nStartup health check]
-    B -->|Every 45 min| F[Layer D\nGo daemon\nPeriodic health check]
+    B -->|"Explorer crash — Event 1000 / 1002"| C[Layer A — Task Scheduler Event trigger]
+    B -->|"Wake from sleep — Event 107"| C
+    B -->|"Cache size exceeds 32 MB — poll every 30s"| D[Layer B — Go daemon Size watchdog]
+    B -->|Logon| E[Layer C — Go daemon Startup health check]
+    B -->|Every 45 min| F[Layer D — Go daemon Periodic health check]
 
     C --> G[Repair-IconCache.ps1]
     D --> G
-    E --> H{All 4 heuristics\npass?}
+    E --> H{All 4 heuristics pass?}
     F --> H
 
-    H -->|Yes| I([Cache healthy\nNo action needed ✓])
-    H -->|No — index missing\nor external write\nor file count low\nor stale cache| G
+    H -->|Yes| I([Cache healthy — no action needed ✓])
+    H -->|"No — index missing, external write, low file count, or stale cache"| G
 
     G --> J[Stop explorer.exe]
     J --> K[Delete iconcache_*.db]
-    K --> L[Reset shell icon index\nie4uinit.exe]
+    K --> L[Reset shell icon index — ie4uinit.exe]
     L --> M[Restart explorer.exe]
     M --> N([Icons rebuilt clean ✓])
 
