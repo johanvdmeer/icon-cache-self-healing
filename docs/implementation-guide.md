@@ -1,199 +1,159 @@
-# Implementation Guide — icon-cache-self-healing
+# implementation-guide.md
 
-**Version:** 1.0.0  
-**Audience:** Anyone deploying this on a new Windows 11 machine
+**Version:** 2.0.0  
+**Target OS:** Windows 10 21H2 or Windows 11 (any version)
+
+This guide walks through setting up the icon-cache-self-healing toolkit on any machine from scratch.
 
 ---
 
 ## Prerequisites
 
-| Requirement | Check |
-|---|---|
-| Windows 10 21H2+ or Windows 11 | `winver` in Run dialog |
-| PowerShell 5.1+ | `$PSVersionTable.PSVersion` |
-| Administrator account | Required only for installer step |
-| ~5 minutes | Total setup time |
+| Requirement | Purpose | Notes |
+|---|---|---|
+| Windows 10 21H2+ or Windows 11 | Target platform | Any edition |
+| PowerShell 5.1+ | Repair script runtime | Built into Windows |
+| Go 1.20+ | Compile the daemon binary | One-time setup |
+| Administrator rights | Task Scheduler registration | Install step only |
 
 ---
 
-## Step 1 — Copy the Folder to Your Machine
+## Step 0 — Install Go
 
-Place the entire `icon-cache-self-healing` folder anywhere permanent. Recommended:
+Go is required once to compile the daemon binary. After compilation, Go is not needed at runtime.
 
-```
-C:\Tools\icon-cache-self-healing\
-```
-
-> **Important:** Do not move or rename the folder after installation. The Task Scheduler tasks contain hardcoded paths to the `scripts\` subfolder. If you move the folder, re-run `Register-Tasks.ps1`.
-
----
-
-## Step 2 — Set Execution Policy (if needed)
-
-Open PowerShell as Administrator:
+1. Download the Windows installer from [https://go.dev/dl/](https://go.dev/dl/)
+2. Run the installer with default settings
+3. Open a new PowerShell window and verify:
 
 ```powershell
-# Check current policy
-Get-ExecutionPolicy -List
-
-# If it shows 'Restricted' for LocalMachine or CurrentUser, run:
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+go version
+# Expected: go version go1.2x.x windows/amd64
 ```
-
-> `RemoteSigned` allows locally created scripts to run. It does not disable security — scripts downloaded from the internet still require a signature.
 
 ---
 
-## Step 3 — Run the Installer
+## Step 1 — Clone or Download the Repository
 
 ```powershell
-# Open PowerShell as Administrator, then:
-cd "C:\Tools\icon-cache-self-healing"
+# Option A — Git clone
+git clone https://github.com/johanvdmeer/icon-cache-self-healing.git
+cd icon-cache-self-healing
+
+# Option B — Download ZIP from GitHub, extract, then navigate to folder
+cd "C:\path\to\icon-cache-self-healing"
+```
+
+---
+
+## Step 2 — Compile the Daemon
+
+```powershell
+# Run as normal user (no Admin required for compilation)
+.\scripts\Build-Daemon.ps1
+```
+
+Expected output:
+```
+[OK] Go found: go version go1.2x.x windows/amd64
+[OK] Build successful: icon-cache-watchdog.exe (1.7 MB)
+[OK] Binary type: PE32+ GUI subsystem (no console window, ever)
+```
+
+This creates `bin\icon-cache-watchdog.exe` — a Windows GUI-subsystem binary. It runs completely silently with no console window at any point.
+
+---
+
+## Step 3 — Register the Tasks
+
+```powershell
+# Run as Administrator
 .\scripts\Register-Tasks.ps1
 ```
 
-The installer will:
-1. Create `C:\Tools\icon-cache-self-healing\logs\` if it doesn't exist.
-2. Register `\IconCache\EventRepair` in Task Scheduler (Solution A).
-3. Register `\IconCache\Watchdog` in Task Scheduler (Solution B).
-4. Print a confirmation summary.
+Expected output:
+```
+[OK] All required files found.
+[OK] Log directory ready: ...\logs
+[OK] Task registered: \IconCache\EventRepair
+[OK] Task registered: \IconCache\Watchdog (GUI daemon - no window)
+[OK] Watchdog started immediately.
 
-**Expected output:**
+Registered tasks:
+  EventRepair   State: Ready
+  Watchdog      State: Running
 ```
-[INSTALLER] icon-cache-self-healing v1.0.0
-[OK] Log directory ready: C:\Tools\icon-cache-self-healing\logs
-[OK] Task registered: \IconCache\EventRepair  (Event-triggered repair)
-[OK] Task registered: \IconCache\Watchdog     (File-size watchdog daemon)
-[OK] Starting watchdog now...
-[DONE] Installation complete. Both solutions are active.
-```
+
+The Watchdog starts immediately — no reboot required.
 
 ---
 
 ## Step 4 — Verify Installation
 
 ```powershell
-# List registered tasks
+# Confirm both tasks are registered
 Get-ScheduledTask -TaskPath "\IconCache\" | Select-Object TaskName, State
 
-# Expected output:
-# TaskName    State
-# --------    -----
-# EventRepair Ready
-# Watchdog    Running
-```
-
----
-
-## Step 5 — Test the Repair Script Manually
-
-```powershell
-# Run a forced repair (safe — just clears and rebuilds cache)
+# Run a forced repair to confirm the repair pipeline works end-to-end
 .\scripts\Repair-IconCache.ps1 -Force
 
-# Check the log
-Get-Content .\logs\IconCacheRepair.log
+# Check repair completed successfully
+Get-Content .\logs\IconCacheRepair.log -Tail 10
+
+# Check daemon started and health checks are passing
+Get-Content .\logs\Watchdog.log -Tail 10
+Get-Content .\logs\IconCacheHealth.log -Tail 10
 ```
 
-You will briefly see Explorer disappear and restart. Icons will reload. This is expected and takes 3–5 seconds.
+A healthy `IconCacheHealth.log` looks like:
+
+```
+[INFO]  --- Health check running (startup) ---
+[PASS]  H1 PASS: iconcache_idx.db present and 57 KB.
+[PASS]  H2 PASS: Last modified 4 min ago (outside suspicious window).
+[PASS]  H3 PASS: 15 cache files present.
+[PASS]  H4 PASS: Cache last updated 0.0 days ago.
+[PASS]  === ALL HEURISTICS PASSED. Cache is healthy. ===
+```
 
 ---
 
-## Configuration Reference
+## Step 5 — Reboot Confirmation
 
-All configurable parameters are at the top of each script:
+Reboot the machine and log in. Confirm:
 
-### Repair-IconCache.ps1
+- No terminal window appears at login
+- `Get-ScheduledTask -TaskPath "\IconCache\" | Select-Object TaskName, State` shows `Watchdog = Running`
+- `Get-Content .\logs\Watchdog.log -Tail 5` shows a fresh startup line
 
-| Parameter | Default | Description |
+---
+
+## What Runs After Installation
+
+Once installed, the system is fully autonomous:
+
+| What | When | Visible to user |
 |---|---|---|
-| `-SizeLimitMB` | `256` | Repair if cache exceeds this size |
-| `-Force` | `$false` | Skip health check, always repair |
+| `icon-cache-watchdog.exe` starts | Every logon | Nothing |
+| Health check runs | At logon + every 45 min | Nothing |
+| Size check runs | Every 30 seconds | Nothing |
+| Repair fires if needed | On demand | Explorer restarts (3-5 sec) |
+| Event repair fires | On explorer.exe crash | Explorer restarts (3-5 sec) |
 
-### Watch-IconCache.ps1
-
-| Parameter | Default | Description |
-|---|---|---|
-| `-SizeLimitMB` | `256` | Watchdog repair threshold in MB |
-| `-CooldownMin` | `30` | Minimum minutes between repairs |
-| `-RepairScript` | auto-detected | Path to `Repair-IconCache.ps1` |
-
-### Changing the threshold
-
-To change the size limit to 128 MB, edit the default value in `Watch-IconCache.ps1`:
-
-```powershell
-param(
-    [int]$SizeLimitMB = 128,   # ← Change this
-    ...
-)
-```
-
-Then re-run `Register-Tasks.ps1` to update the registered task.
+The only visible behaviour is Explorer briefly disappearing and returning when a repair fires — which is the intentional, correct result.
 
 ---
 
-## Verifying the Watchdog Is Alive
+## Rebuilding After Source Changes
 
-The watchdog writes a heartbeat every 6 hours:
-
-```powershell
-Get-Content .\logs\Watchdog.log -Tail 20
-```
-
-Look for lines containing `[HEARTBEAT]`. If the last heartbeat is older than 12 hours, the watchdog may have stopped — re-run the installer to restart it.
-
----
-
-## Checking Repair History
+If you modify `daemon/main.go`:
 
 ```powershell
-# Full log
-Get-Content .\logs\IconCacheRepair.log
-
-# Only repairs (filter out "no action" lines)
-Get-Content .\logs\IconCacheRepair.log | Where-Object { $_ -match "REPAIR|TRIGGER|ERROR" }
+.\scripts\Build-Daemon.ps1
+.\scripts\Register-Tasks.ps1
 ```
 
----
-
-## Deploying on a New Machine (Reuse Checklist)
-
-- [ ] Copy `icon-cache-self-healing\` folder to `C:\Tools\`
-- [ ] Open PowerShell as Administrator
-- [ ] `cd C:\Tools\icon-cache-self-healing`
-- [ ] `.\scripts\Register-Tasks.ps1`
-- [ ] `Get-ScheduledTask -TaskPath "\IconCache\"` — verify both tasks show `Ready` or `Running`
-- [ ] `.\scripts\Repair-IconCache.ps1 -Force` — smoke test
-- [ ] Done
-
----
-
-## Troubleshooting
-
-### "Access denied" when running installer
-Make sure PowerShell is running **as Administrator** (right-click → Run as Administrator).
-
-### Task shows "Disabled" state
-```powershell
-Enable-ScheduledTask -TaskPath "\IconCache\" -TaskName "EventRepair"
-Enable-ScheduledTask -TaskPath "\IconCache\" -TaskName "Watchdog"
-```
-
-### Icons still not rebuilding after a crash
-Check if the lock file is stuck:
-```powershell
-$lockPath = Join-Path $PSScriptRoot "..\scripts\repair.lock"
-if (Test-Path $lockPath) { Remove-Item $lockPath -Force; Write-Host "Lock cleared." }
-```
-
-### Watchdog log is empty
-The watchdog hasn't written a heartbeat yet (it writes every 6 hours). Either wait, or check if the `Watchdog` task is in `Running` state.
-
-### ExecutionPolicy error
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
-```
+The installer is idempotent — it removes and recreates the tasks cleanly every run.
 
 ---
 
@@ -204,11 +164,20 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 Unregister-ScheduledTask -TaskPath "\IconCache\" -TaskName "EventRepair" -Confirm:$false
 Unregister-ScheduledTask -TaskPath "\IconCache\" -TaskName "Watchdog"    -Confirm:$false
 
-# Remove the task folder from Task Scheduler
-$svc = New-Object -ComObject Schedule.Service
-$svc.Connect()
-$svc.GetFolder("\").DeleteFolder("IconCache", 0)
-
-# Delete the toolkit folder (optional)
-# Remove-Item "C:\Tools\icon-cache-self-healing" -Recurse -Force
+# Remove task folder from Task Scheduler
+$scheduler = New-Object -ComObject Schedule.Service
+$scheduler.Connect()
+$scheduler.GetFolder("\").DeleteFolder("IconCache", 0)
 ```
+
+Then delete the project folder. No registry modifications. No system files touched.
+
+---
+
+## Log File Reference
+
+| File | Written by | Contents |
+|---|---|---|
+| `logs/Watchdog.log` | Go daemon | Startup, size checks, heartbeat, repair triggers |
+| `logs/IconCacheHealth.log` | Go daemon | Heuristic results, pass/fail per check |
+| `logs/IconCacheRepair.log` | `Repair-IconCache.ps1` | Each repair run, files deleted, before/after size |

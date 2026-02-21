@@ -1,15 +1,21 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Low-resource icon cache watchdog daemon v1.1.0
-    Fixed: FSW handler scope isolation bug (op_Subtraction error)
-    Fixed: Default threshold lowered to 32 MB (winget/update corruption occurs well below 256 MB)
-    Added: Corruption heuristic (iconcache_256.db growth rate check)
+    REFERENCE IMPLEMENTATION — Layer B (File Size Watchdog)
+    
+    This script is retained for documentation and auditability purposes.
+    In v2.0.0+, this functionality is handled by the compiled Go daemon
+    (bin/icon-cache-watchdog.exe, source in daemon/main.go).
+    
+    This script is NOT registered as the active runtime.
+    To understand how Layer B works, read this file.
+    To run the production system, use Register-Tasks.ps1.
 
 .NOTES
     Naming Policy:  naming-conventions-policy-v3.2.0 - Style C (Verb-Noun.ps1)
+    Status:         Reference implementation (superseded by Go daemon in v2.0.0)
+    Production:     daemon/main.go
     Log output:     ..\logs\Watchdog.log
-    Started by:     Task Scheduler task \IconCache\Watchdog (via Register-Tasks.ps1)
 #>
 
 [CmdletBinding()]

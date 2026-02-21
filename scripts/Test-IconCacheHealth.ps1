@@ -1,7 +1,18 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Layer C + D — Proactive icon cache health checker.
+    REFERENCE IMPLEMENTATION — Layer C + D (Proactive Health Checks)
+
+    This script is retained for documentation and auditability purposes.
+    In v2.0.0+, this functionality is handled by the compiled Go daemon
+    (bin/icon-cache-watchdog.exe, source in daemon/main.go).
+
+    This script is NOT registered as the active runtime.
+    To understand how Layers C and D work, read this file.
+    To run the production system, use Register-Tasks.ps1.
+
+    Original description:
+    Proactive icon cache health checker.
     Runs at logon AND every 45 minutes during the session.
     Detects silent corruption that does not cause file size growth.
 
